@@ -102,7 +102,7 @@ class FullCalendarCard extends LitElement {
   		if(!this._hass) return [];
   		
   		var result = await Promise.all(
-        	calendars.map(
+        	this.entities.map(
           		async calendar => {
           			let url = `calendars/${calendar.entity}?start=${start}&end=${end}`;
           			let result = await this._hass.callApi('get', url);
