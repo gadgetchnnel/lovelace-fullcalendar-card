@@ -1626,11 +1626,11 @@ be a descendant of the grid when it is being dragged.
         		height: 100%;
         		background-color: var(--paper-card-background-color);
       		}
-      		</style>`:O`
+      		</style>`:O`<style type="text/css">
       			:host #calendar {
         			background-color: var(--paper-card-background-color);
       			}
-      		`}get calendarcss(){return O`<style type="text/css">
+      		</style>`}get calendarcss(){return O`<style type="text/css">
       		${Es}
 			${Ss}
 			${Ds}

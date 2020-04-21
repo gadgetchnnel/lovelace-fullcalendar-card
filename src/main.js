@@ -27,11 +27,11 @@ class FullCalendarCard extends LitElement {
         		height: 100%;
         		background-color: var(--paper-card-background-color);
       		}
-      		</style>` : html`
+      		</style>` : html`<style type="text/css">
       			:host #calendar {
         			background-color: var(--paper-card-background-color);
       			}
-      		`;
+      		</style>`;
 	}
 	
 	get calendarcss() {
