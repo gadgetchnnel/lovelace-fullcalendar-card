@@ -6,6 +6,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import coreCSS from '@fullcalendar/core/main.css';
 import daygridCSS from '@fullcalendar/daygrid/main.css';
 import timegridCSS from '@fullcalendar/timegrid/main.css';
+import { CalendarEvent, CalendarService } from "./data.js";
 
 class FullCalendarCard extends LitElement {
 
@@ -14,6 +15,7 @@ class FullCalendarCard extends LitElement {
 			throw new Error("Invalid configuration");
 		this._config = config;
 		this.entities = this.processConfigEntities(this._config.entities);
+		this.calendarService = new CalendarService();
 	}
  
 	createRenderRoot() {
@@ -25,10 +27,12 @@ class FullCalendarCard extends LitElement {
 			:host #calendar {
         		width: 100%;
         		height: 100%;
+        		color: var(--primary-text-color);
         		background-color: var(--paper-card-background-color);
       		}
       		</style>` : html`<style type="text/css">
       			:host #calendar {
+      				color: var(--primary-text-color);
         			background-color: var(--paper-card-background-color);
       			}
       		</style>`;
@@ -66,12 +70,13 @@ class FullCalendarCard extends LitElement {
   		
 		return entities.map((entityConf, index) => {
 			if (typeof entityConf === "string") {
-      			entityConf = { entity: entityConf };
+      			entityConf = { entity: entityConf, eventColor: "#3788d8" };
     		} else if (typeof entityConf === "object" && !Array.isArray(entityConf)) {
       			if (!entityConf.entity) {
         			throw new Error(
           				`Entity object at position ${index} is missing entity field.`
         			);
+        			if(!entityConf.eventColor) entityConf = {...entityConf, eventColor: "#3788d8"};
         		 }
     		} else {
       			throw new Error(`Invalid entity specified at position ${index}.`);
@@ -98,24 +103,6 @@ class FullCalendarCard extends LitElement {
   		this._isPanel = isPanel;
   	}
   	
-  	async getEvents(start, end){
-  		if(!this._hass) return [];
-  		
-  		var result = await Promise.all(
-        	this.entities.map(
-          		async calendar => {
-          			let url = `calendars/${calendar.entity}?start=${start}&end=${end}`;
-          			let result = await this._hass.callApi('get', url);
-          			return result.map(x => { return {title: x.summary ? x.summary : x.title, 
-          			start: x.start.date ? x.start.date : x.start.dateTime ? x.start.dateTime : x.start,
-          			end: x.end.date ? x.end.date : x.end.dateTime ? x.end.dateTime : x.end,
-          			allDay: (!!x.start.date),
-          			calendar: calendar} });
-          		  }));
-        
-        return [].concat.apply([], result);
-  	}
-  	
   	updateAspectRatio(){
   		let portrait = (window.innerHeight > window.innerWidth);
 			
@@ -123,6 +110,17 @@ class FullCalendarCard extends LitElement {
 			if(aspectRatio != this.calendar.getOption('aspectRatio')){
 				this.calendar.setOption("aspectRatio", aspectRatio);
 			}
+  	}
+  	
+  	getEventSources(){
+  		return this.entities.map(calendar => {
+  			return{
+  				events: async (info) => {
+  					return await this.calendarService.getCalendarEvents(this._hass, calendar, info.start, info.end);
+  				},
+  				color: calendar.eventColor
+  			}
+  		});
   	}
   	
 	firstUpdated(){
@@ -142,9 +140,7 @@ class FullCalendarCard extends LitElement {
     			minute: '2-digit',
     			hour12: false
   			},
-    		events: (info) => {
-    			return this.getEvents(info.start.toISOString(),info.end.toISOString());
-  			},
+  			eventSources: this.getEventSources(),
   			windowResize: () => {
     			this.updateAspectRatio();
   			},
