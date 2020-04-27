@@ -113,12 +113,12 @@ class FullCalendarCard extends LitElement {
   	}
   	
   	getEventSources(){
-  		return this.entities.map(calendar => {
+  		return this.entities.map(entityConf => {
   			return{
   				events: async (info) => {
-  					return await this.calendarService.getCalendarEvents(this._hass, calendar, info.start, info.end);
+  					return await this.calendarService.getEvents(this._hass, entityConf, info.start, info.end);
   				},
-  				color: calendar.eventColor
+  				color: entityConf.eventColor
   			}
   		});
   	}
