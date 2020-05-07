@@ -6,7 +6,11 @@ import interactionPlugin from '@fullcalendar/interaction';
 import coreCSS from '@fullcalendar/core/main.css';
 import daygridCSS from '@fullcalendar/daygrid/main.css';
 import timegridCSS from '@fullcalendar/timegrid/main.css';
-import { CalendarEvent, CalendarService } from "./data.js";
+import tippy from 'tippy.js';
+import tippyCSS from 'tippy.js/dist/tippy.css';
+import tippyAnimationCSS from 'tippy.js/animations/scale-extreme.css';
+import tippyThemeCSS from './tippy-theme.css';
+import { CalendarService } from "./data.js";
 
 class FullCalendarCard extends LitElement {
 
@@ -43,11 +47,14 @@ class FullCalendarCard extends LitElement {
       		${coreCSS}
 			${daygridCSS}
 			${timegridCSS}
+			${tippyCSS}
+			${tippyAnimationCSS}
+			${tippyThemeCSS}
       		</style>`;
 	}
 	
   	render() {
-		return [this.hostcss, this.calendarcss, html`<div id="calendar"></div>`];
+		return [this.calendarcss, this.hostcss, html`<div id="calendar"></div>`];
 	}
 	
   	get root(){
@@ -118,6 +125,9 @@ class FullCalendarCard extends LitElement {
   				events: async (info) => {
   					return await this.calendarService.getEvents(this._hass, entityConf, info.start, info.end);
   				},
+  				id: entityConf.entity.startsWith("calendar") ?
+  				(entityConf.name ? entityConf.name : this._hass.states[entityConf.entity].attributes.friendly_name)
+  				: "Entities",
   				color: entityConf.eventColor
   			}
   		});
@@ -125,8 +135,10 @@ class FullCalendarCard extends LitElement {
   	
 	firstUpdated(){
 		var calendarEl = this.root.querySelector("#calendar");
-		console.log("Calendar Element", calendarEl);
 		let portrait = (window.innerHeight > window.innerWidth);
+		
+		tippy.setDefaultProps({ maxWidth: '', maxHeight: '' });
+		
 		this.calendar = new Calendar(calendarEl, {
     		plugins: [ dayGridPlugin, timeGridPlugin, interactionPlugin ],
     		aspectRatio: this._isPanel ?  (portrait ? 0.4 : 2.5) : 1.35,
@@ -144,8 +156,53 @@ class FullCalendarCard extends LitElement {
   			windowResize: () => {
     			this.updateAspectRatio();
   			},
-  			dateClick: (info) => {
-    			this.calendar.changeView('timeGridDay', info.dateStr);
+  			eventRender: function(info) {
+    			tippy(info.el, {
+  					content: `<div style="min-width:40em; min-height:10em;">
+  						<h2>${info.event.title}</h2>
+  						<p><ha-icon icon="mdi:clock"></ha-icon> ${info.event.extendedProps.displayTime}</p>
+	 					<p></p>
+	 					<p><ha-icon icon="mdi:calendar"></ha-icon> ${info.event.source.id}</p>
+	 				</div>
+	 		`,
+	 				arrow: false,
+  					animation: 'scale-extreme',
+  					placement: 'auto',
+  					theme: 'homeassistant',
+  					appendTo: calendarEl,
+  					trigger: 'click',
+  					hideOnClick: true,
+  					onHide(instance) {
+    					let now = new Date();
+    					instance.lastHidden = now;
+    				},
+    				onShow(instance) {
+    					let now = new Date();
+    					if(instance.lastHidden){
+    						// Block if showing las than 0.5 seconds after hiding
+    						let ago = now.getTime() - instance.lastHidden.getTime();
+    						if(ago < 500) return false;
+    					}	
+    				},
+    				popperOptions: {
+    					modifiers: [
+      						{
+        						name: 'flip',
+        						options: {
+          							fallbackPlacements: ['bottom', 'right'],
+        						},
+      						},
+      						{
+        						name: 'preventOverflow',
+        						options: {
+          							altAxis: true,
+          							tether: false,
+        						},
+      						},
+    					],
+  					},
+  					allowHTML: true
+				});
   			}
   		});
   		
