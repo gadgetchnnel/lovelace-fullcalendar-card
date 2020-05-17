@@ -50,6 +50,15 @@ class FullCalendarCard extends LitElement {
 			${tippyCSS}
 			${tippyAnimationCSS}
 			${tippyThemeCSS}
+			
+			.fc-unthemed .fc-today {
+  				background: rgba(var(--rgb-primary-text-color), 0.5) !important;
+  				opacity: 0.5 !important;
+  				color: black !important;
+    			border: none !important;
+    			border-top: 1px solid #ddd !important;
+    			font-weight: bold;
+			}
       		</style>`;
 	}
 	
