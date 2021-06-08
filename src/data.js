@@ -1,4 +1,5 @@
-var moment = require("moment").default;
+var moment = require("moment");
+import "./locale.js";
 
 const eventAllDay = function(event){
    		var allDay = false;

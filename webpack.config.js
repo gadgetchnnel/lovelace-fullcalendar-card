@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
   entry: './src/main.js',
@@ -8,11 +9,15 @@ module.exports = {
     filename: 'lovelace-fullcalendar-card.js',
     path: path.resolve(__dirname)
   },
+  plugins: [
+    // Ignore all locale files of moment.js
+    new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
+  ],
   module: {
     rules: [
       {
         test: /\.css$/i,
-        use: ['lit-css-loader'],
+        use: ['css-loader'],
       },
     ],
   },

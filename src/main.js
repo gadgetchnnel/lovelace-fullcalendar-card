@@ -1,18 +1,49 @@
-import { LitElement, html, css } from "lit-element";
+import { LitElement, html, css, unsafeCSS } from "lit-element";
 import { Calendar } from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
+import fullcalendarStyle from "@fullcalendar/common/main.css";
 import interactionPlugin from '@fullcalendar/interaction';
-import coreCSS from '@fullcalendar/common/main.css';
-import daygridCSS from '@fullcalendar/daygrid/main.css';
+import dayGridPlugin from "@fullcalendar/daygrid";
+import daygridStyle from "@fullcalendar/daygrid/main.css";
+import listPlugin from "@fullcalendar/list";
+import listStyle from "@fullcalendar/list/main.css";
 import tippy from 'tippy.js';
-import tippyCSS from 'tippy.js/dist/tippy.css';
-import tippyAnimationCSS from 'tippy.js/animations/scale-extreme.css';
-import tippyThemeCSS from './tippy-theme.css';
+import tippyStyle from 'tippy.js/dist/tippy.css';
+import tippyAnimationStyle from 'tippy.js/animations/scale-extreme.css';
+import tippyThemeStyle from './tippy-theme.css';
 import { CalendarService } from "./data.js";
+import { haStyle } from "./styles.js"
+import { mdiViewAgenda, mdiViewDay, mdiViewModule, mdiViewWeek } from "./icons.js";
+
+const viewButtons = [
+  { label: "Month View", value: "dayGridMonth", iconPath: mdiViewModule },
+  { label: "Week View", value: "dayGridWeek", iconPath: mdiViewWeek },
+  { label: "Day View", value: "dayGridDay", iconPath: mdiViewDay },
+  { label: "List View", value: "list", iconPath: mdiViewAgenda },
+];
+
+
+const getListWeekRange = (currentDate) => {
+  const startDate = new Date(currentDate.valueOf());
+  const endDate = new Date(currentDate.valueOf());
+
+  endDate.setDate(endDate.getDate() + 7);
+
+  return { start: startDate, end: endDate };
+};
 
 class FullCalendarCard extends LitElement {
 
+    constructor() {
+    	super();
+    	this._activeView = "dayGridMonth";
+    	this.initialView = "dayGridMonth";
+    	this.views = [
+    		"dayGridMonth",
+    		"dayGridWeek",
+    		"dayGridDay",
+  		];
+    }
+    
 	setConfig(config) {
 		if(!config || !config.entities)
 			throw new Error("Invalid configuration");
@@ -21,40 +52,28 @@ class FullCalendarCard extends LitElement {
 		this.calendarService = new CalendarService();
 	}
  
-	createRenderRoot() {
-		return this;
-	}
-
-	get hostcss() {
-		return this.isPanel ? html`<style type="text/css">
-			:host #calendar {
-        		width: 100%;
-        		height: 100%;
-        		color: var(--primary-text-color);
-        		background-color: var(--paper-card-background-color);
-      		}
-      		</style>` : html`<style type="text/css">
-      			:host #calendar {
-      				color: var(--primary-text-color);
-        			background-color: var(--paper-card-background-color);
-      			}
-      		</style>`;
-	}
-	
-	get calendarcss() {
-		return html`<style type="text/css">
-      		${coreCSS}
-			${daygridCSS}
-			${tippyCSS}
-			${tippyAnimationCSS}
-			${tippyThemeCSS}
-			
-			:host {
+	static get styles() {
+    console.log("getting styles");
+    return [
+      haStyle,
+      css`
+        ${unsafeCSS(fullcalendarStyle)}
+      	${unsafeCSS(daygridStyle)}
+      	${unsafeCSS(listStyle)}
+      	${unsafeCSS(tippyStyle)}
+      	${unsafeCSS(tippyAnimationStyle)}
+      	${unsafeCSS(tippyThemeStyle)}
+      	
+        :host {
           display: flex;
           flex-direction: column;
           --fc-theme-standard-border-color: var(--divider-color);
         }
-
+        
+        :host([ispanel]) {
+    		height: calc(100% - 6em);
+        }
+        
         .header {
           display: flex;
           align-items: center;
@@ -291,11 +310,97 @@ class FullCalendarCard extends LitElement {
           scrollbar-color: var(--scrollbar-thumb-color) transparent;
           scrollbar-width: thin;
         }
-      		</style>`;
+      `,
+    ];
+  }
+  
+	get calendarHtml() {
+		const viewToggleButtons =  viewButtons.filter((button) =>
+      		this.views.includes(button.value)
+    	);
+		
+		return html`
+      ${this.calendar
+        ? html`
+            <div class="header">
+              ${!this.narrow
+                ? html`
+                    <div class="navigation">
+                      <mwc-button
+                        outlined
+                        class="today"
+                        @click=${this._handleToday}
+                        >Today</mwc-button
+                      >
+                      <ha-icon-button
+                        label=${this._hass.localize("ui.common.previous")}
+                        icon="hass:chevron-left"
+                        class="prev"
+                        @click=${this._handlePrev}
+                      >
+                      </ha-icon-button>
+                      <ha-icon-button
+                        label=${this._hass.localize("ui.common.next")}
+                        icon="hass:chevron-right"
+                        class="next"
+                        @click=${this._handleNext}
+                      >
+                      </ha-icon-button>
+                    </div>
+                    <h1>
+                      ${this.calendar.view.title}
+                    </h1>
+                    <ha-button-toggle-group
+                      .buttons=${viewToggleButtons}
+                      .active=${this._activeView}
+                      @value-changed=${this._handleView}
+                    ></ha-button-toggle-group>
+                  `
+                : html`
+                    <div class="controls">
+                      <h1>
+                        ${this.calendar.view.title}
+                      </h1>
+                      <div>
+                        <ha-icon-button
+                          label=${this._hass.localize("ui.common.previous")}
+                          icon="hass:chevron-left"
+                          class="prev"
+                          @click=${this._handlePrev}
+                        >
+                        </ha-icon-button>
+                        <ha-icon-button
+                          label=${this._hass.localize("ui.common.next")}
+                          icon="hass:chevron-right"
+                          class="next"
+                          @click=${this._handleNext}
+                        >
+                        </ha-icon-button>
+                      </div>
+                    </div>
+                    <div class="controls">
+                      <mwc-button
+                        outlined
+                        class="today"
+                        @click=${this._handleToday}
+                        >Today</mwc-button
+                      >
+                      <ha-button-toggle-group
+                        .buttons=${viewToggleButtons}
+                        .active=${this._activeView}
+                        @value-changed=${this._handleView}
+                      ></ha-button-toggle-group>
+                    </div>
+                  `}
+            </div>
+          `
+        : ""}
+      <div id="calendar"></div>
+    `;
 	}
 	
   	render() {
-		return [this.calendarcss, this.hostcss, html`<div id="calendar"></div>`];
+		return [this.calendarHtml];
 	}
 	
   	get root(){
@@ -304,9 +409,19 @@ class FullCalendarCard extends LitElement {
   	
   	static get properties() {
    		return {
+   			narrow: { 
+   				type: Boolean,
+        		reflect: true
+        	},
+        	views: {
+        		type: Object
+        	},
+        	initialView: {
+        		type: Object
+        	},
    			isPanel: { 
    				type: Boolean,
-        		reflectToAttribute: true
+        		reflect: true
         	} 
         };
  	}
@@ -332,32 +447,19 @@ class FullCalendarCard extends LitElement {
 			return entityConf;
   		});
 	}
- 	
-  	connectedCallback() {
-  		super.connectedCallback();
-   		let fontFaceSheet = new CSSStyleSheet();
-    	fontFaceSheet.replaceSync(`@font-face {
-       		font-family: "fcicons";
-       		src: url("data:application/x-font-ttf;charset=utf-8;base64,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") format("truetype");
-     	}`);
-     	document.adoptedStyleSheets = [...document.adoptedStyleSheets, fontFaceSheet];
-  	}
-  	
-  	get isPanel(){
-  		return this._isPanel;
-  	}
-  	
-  	set isPanel(isPanel){
-  		this._isPanel = isPanel;
-  	}
   	
   	updateAspectRatio(){
-  		let portrait = (window.innerHeight > window.innerWidth);
-			
-			let aspectRatio = this._isPanel ?  (portrait ? 0.4 : 2.5) : 1.35;
-			if(aspectRatio != this.calendar.getOption('aspectRatio')){
-				this.calendar.setOption("aspectRatio", aspectRatio);
-			}
+  		this._measureCard();
+  		
+  		if(!this.calendar) return;
+  		
+  		this.calendar.updateSize();
+  		// let portrait = (window.innerHeight > window.innerWidth);
+// 			
+// 			let aspectRatio = this._isPanel ?  (portrait ? 0.4 : 2.5) : 1.35;
+// 			if(aspectRatio != this.calendar.getOption('aspectRatio')){
+// 				this.calendar.setOption("aspectRatio", aspectRatio);
+// 			}
   	}
   	
   	getEventSources(){
@@ -374,6 +476,32 @@ class FullCalendarCard extends LitElement {
   		});
   	}
   	
+  	updated(changedProps){
+    	super.updated(changedProps);
+	
+		if (!this.calendar) {
+      		return;
+    	}
+
+    	if (changedProps.has("narrow")) {
+      		this.views = this.narrow ? ["list", "dayGridMonth", "dayGridDay"] 
+      			: [ "dayGridMonth", "dayGridWeek", "dayGridDay"];
+      		this.initialView = this.narrow ? "list" : "dayGridMonth";
+      		this._activeView = this.initialView;
+      		this.calendar.changeView(this._activeView);
+      		this.calendar.setOption("eventDisplay", this.narrow ? "list-item" : "auto");
+      		this.requestUpdate();
+    	}
+    	
+    	if (changedProps.has("views") && !this.views.includes(this._activeView)) {
+      		this._activeView = this.initialView && this.views.includes(this.initialView)
+          		? this.initialView
+          		: this.views[0];
+      		this.calendar.changeView(this._activeView);
+      		this.requestUpdate();
+    	}
+  	}
+  	
 	firstUpdated(){
 		var calendarEl = this.root.querySelector("#calendar");
 		let portrait = (window.innerHeight > window.innerWidth);
@@ -381,14 +509,18 @@ class FullCalendarCard extends LitElement {
 		tippy.setDefaultProps({ maxWidth: '', maxHeight: '' });
 		
 		this.calendar = new Calendar(calendarEl, {
-    		plugins: [ dayGridPlugin, timeGridPlugin, interactionPlugin ],
-    		aspectRatio: this._isPanel ?  (portrait ? 0.4 : 2.5) : 1.35,
+    		plugins: [dayGridPlugin, listPlugin, interactionPlugin],
+    		//aspectRatio: this.isPanel ?  (portrait ? 0.4 : 2.5) : 1.35,
+    		initialView: this.initialView,
+    		locale: this._hass.language,
     		eventDisplay: "auto",
-    		header: {
-  				start:   'today prev, next',
-  				center: 'title',
-  				right:  'dayGridMonth dayGridWeek dayGridDay'
-			},
+    		views: {
+    			list: {
+      				visibleRange: getListWeekRange,
+    			},
+  			},
+    		headerToolbar: false,
+    		height: "parent",
     		eventTimeFormat: {
     			hour: 'numeric',
     			minute: '2-digit',
@@ -449,10 +581,21 @@ class FullCalendarCard extends LitElement {
   		});
   		
   		this.calendar.render();
+  		this._measureCard();
+  		this.requestUpdate();
+  		
 	}
   	
   	getCardSize() {
     	return 2;
+  	}
+  	
+  	_measureCard() {
+  		let card = this.shadowRoot.querySelector("#calendar");
+  		if(!card) return;
+    	this.narrow = card.offsetWidth < 870;
+
+		this.requestUpdate();
   	}
   	
 	set hass(hass) {
@@ -461,6 +604,27 @@ class FullCalendarCard extends LitElement {
 			this.updateAspectRatio();
 		}
 	}
+	
+	_handleNext() {
+    	this.calendar.next();
+    	this.requestUpdate();
+  	}
+
+	_handlePrev() {
+    	this.calendar.prev();
+    	this.requestUpdate();
+  	}
+  	
+	_handleToday() {
+    	this.calendar.today();
+		this.requestUpdate();
+	}
+  
+  	_handleView(ev) {
+    	this._activeView = ev.detail.value;
+    	this.calendar.changeView(this._activeView);
+    	this.requestUpdate();
+  	}
 }
     
 customElements.define('fullcalendar-card', FullCalendarCard);

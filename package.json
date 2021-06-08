@@ -15,7 +15,7 @@
   "license": "MIT",
   "devDependencies": {
     "css-loader": "^3.5.2",
-    "lit-css-loader": "0.0.3",
+    "lit-css-loader": "0.0.4",
     "style-loader": "^1.1.4",
     "to-string-loader": "^1.1.6",
     "webpack": "^4.41.2",
@@ -26,9 +26,10 @@
     "@fullcalendar/common": "5.1.0",
     "@fullcalendar/core": "5.1.0",
     "@fullcalendar/daygrid": "5.1.0",
+    "@fullcalendar/list": "5.1.0",
     "@fullcalendar/interaction": "5.1.0",
     "lit-element": "^2.3.1",
-    "moment": "^2.25.1",
+    "moment": "^2.29.1",
     "tippy.js": "^6.2.2"
   },
   "keywords": []
