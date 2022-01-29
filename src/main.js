@@ -13,7 +13,7 @@ import tippyThemeStyle from './tippy-theme.css';
 import { CalendarService } from "./data.js";
 import { haStyle } from "./styles.js"
 import { mdiViewAgenda, mdiViewDay, mdiViewModule, mdiViewWeek } from "./icons.js";
-
+import { applyThemesOnElement } from 'custom-card-helpers';
 const viewButtons = [
   { label: "Month View", value: "dayGridMonth", iconPath: mdiViewModule },
   { label: "Week View", value: "dayGridWeek", iconPath: mdiViewWeek },
@@ -74,6 +74,10 @@ class FullCalendarCard extends LitElement {
     		height: calc(100% - 6em);
         }
         
+        :host([ispanel]) ha-card {
+        	height: calc(100% - 6em);
+        }
+        
         .header {
           display: flex;
           align-items: center;
@@ -118,7 +122,7 @@ class FullCalendarCard extends LitElement {
         ha-button-toggle-group {
           color: var(--primary-color);
         }
-
+        
         #calendar {
           flex-grow: 1;
           background-color: var(
@@ -136,6 +140,7 @@ class FullCalendarCard extends LitElement {
           );
           --fc-theme-standard-border-color: var(--divider-color);
           --fc-border-color: var(--divider-color);
+          height: 100%;
         }
 
         a {
@@ -319,7 +324,7 @@ class FullCalendarCard extends LitElement {
       		this.views.includes(button.value)
     	);
 		
-		return html`
+		return html`<ha-card>
       ${this.calendar
         ? html`
             <div class="header">
@@ -395,7 +400,7 @@ class FullCalendarCard extends LitElement {
             </div>
           `
         : ""}
-      <div id="calendar"></div>
+      <div id="calendar"></div></ha-card>
     `;
 	}
 	
@@ -422,7 +427,10 @@ class FullCalendarCard extends LitElement {
    			isPanel: { 
    				type: Boolean,
         		reflect: true
-        	} 
+        	},
+        	_hass: {
+        		type: Object
+        	}
         };
  	}
  	
@@ -476,6 +484,7 @@ class FullCalendarCard extends LitElement {
   		});
   	}
   	
+
   	updated(changedProps){
     	super.updated(changedProps);
 	
@@ -499,6 +508,17 @@ class FullCalendarCard extends LitElement {
           		: this.views[0];
       		this.calendar.changeView(this._activeView);
       		this.requestUpdate();
+    	}
+    	
+    	if (!this._config) {
+      		return;
+    	}
+
+    	if (this._hass) {
+      		const oldHass = changedProps.get('_hass');
+      			if (!oldHass || oldHass.themes !== this._hass.themes) {
+        			applyThemesOnElement(this, this._hass.themes, this._config.theme);
+      			}
     	}
   	}
   	

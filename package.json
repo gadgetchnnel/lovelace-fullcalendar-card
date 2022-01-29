@@ -26,8 +26,9 @@
     "@fullcalendar/common": "5.1.0",
     "@fullcalendar/core": "5.1.0",
     "@fullcalendar/daygrid": "5.1.0",
-    "@fullcalendar/list": "5.1.0",
     "@fullcalendar/interaction": "5.1.0",
+    "@fullcalendar/list": "5.1.0",
+    "custom-card-helpers": "^1.9.0",
     "lit-element": "^2.3.1",
     "moment": "^2.29.1",
     "tippy.js": "^6.2.2"
