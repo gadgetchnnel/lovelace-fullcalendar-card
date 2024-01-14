@@ -37,6 +37,10 @@ class FullCalendarCard extends LitElement {
     	super();
     	this._activeView = "dayGridMonth";
     	this.initialView = "dayGridMonth";
+    	this.initialViewWide = "dayGridMonth";
+    	this.eventDisplayWide = "auto";
+    	this.iniitialViewNarrow = "list";
+    	this.eventDisplayNarrow = "list-item";
     	this.views = [
     		"dayGridMonth",
     		"dayGridWeek",
@@ -50,6 +54,11 @@ class FullCalendarCard extends LitElement {
 		this._config = config;
 		this.entities = this.processConfigEntities(this._config.entities);
 		this.calendarService = new CalendarService();
+		
+		this.initialViewWide = config.initialViewWide || "dayGridMonth";
+    	this.eventDisplayWide = config.eventDisplayWide || "auto";
+    	this.initialViewNarrow = config.initialViewNarrow || "list";
+    	this.eventDisplayNarrow = config.eventDisplayNarrow || "list-item";
 	}
  
 	static get styles() {
@@ -270,7 +279,7 @@ class FullCalendarCard extends LitElement {
           padding-bottom: 12px;
         }
 
-        :host([narrow]) .fc-dayGridMonth-view
+        /*:host([narrow]) .fc-dayGridMonth-view
           .fc-daygrid-dot-event
           .fc-event-time,
         :host([narrow]) .fc-dayGridMonth-view
@@ -297,7 +306,7 @@ class FullCalendarCard extends LitElement {
 
         :host([narrow]) .fc-dayGridMonth-view .fc-scrollgrid-sync-table {
           overflow: hidden;
-        }
+        }*/
 
         .fc-scroller::-webkit-scrollbar {
           width: 0.4rem;
@@ -495,10 +504,11 @@ class FullCalendarCard extends LitElement {
     	if (changedProps.has("narrow")) {
       		this.views = this.narrow ? ["list", "dayGridMonth", "dayGridDay"] 
       			: [ "dayGridMonth", "dayGridWeek", "dayGridDay"];
-      		this.initialView = this.narrow ? "list" : "dayGridMonth";
+      		
+      		this.initialView = this.narrow ? this.initialViewNarrow : this.initialViewWide;
       		this._activeView = this.initialView;
       		this.calendar.changeView(this._activeView);
-      		this.calendar.setOption("eventDisplay", this.narrow ? "list-item" : "auto");
+      		this.calendar.setOption("eventDisplay", this.narrow ? this.eventDisplayNarrow : this.eventDisplayWide);
       		this.requestUpdate();
     	}
     	
